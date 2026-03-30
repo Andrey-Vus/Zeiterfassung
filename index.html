@@ -123,6 +123,9 @@
             return rounded / 60; // Returns hours
         };
 
+        const toLocalIsoDate = (date) => {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        };
 
         // --- COMPONENTS ---
 
@@ -409,7 +412,7 @@
                             const pause = p > ini.overtimeThresholdHours ? ini.defaultPauseMin : 0;
 
                             days.push({
-                                dateISO: d.toISOString().split('T')[0],
+                                dateISO: toLocalIsoDate(d),
                                 weekday: weekDays[i],
                                 planHours: p,
                                 pauseMin: pause,
@@ -574,7 +577,7 @@
 
         // 3. TASKS TAB
         const TasksTab = ({ dbAuth, setStatus }) => {
-            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+            const [date, setDate] = useState(toLocalIsoDate(new Date()));
             const [tasks, setTasks] = useState([]);
             const [loading, setLoading] = useState(false);
             const saveTimeoutRef = useRef(null);
