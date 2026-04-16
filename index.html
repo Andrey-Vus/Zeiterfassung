@@ -482,9 +482,15 @@
             };
 
             const clearWeek = async () => {
-                if (!confirm("Woche zurücksetzen?")) return;
+                if (!confirm("Woche zurücksetzen? Alle Tagesaufgaben dieser Woche werden ebenfalls gelöscht.")) return;
                 const client = redisClient(dbAuth);
-                await client.del(`zeiterfassung:week:${year}:${kw}`);
+                const deletes = [`zeiterfassung:week:${year}:${kw}`];
+                if (weekData) {
+                    for (const day of weekData.days) {
+                        deletes.push(`zeiterfassung:tasks:${day.dateISO}`);
+                    }
+                }
+                await Promise.all(deletes.map(k => client.del(k)));
                 loadWeek();
             };
 
