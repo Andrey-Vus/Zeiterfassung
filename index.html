@@ -718,7 +718,7 @@
             const pivot = useMemo(() => {
                 const map = {};
                 tasks.forEach(t => {
-                    if (t.durationHours > 0) map[t.name] = (map[t.name] || 0) + t.durationHours;
+                    if (t.name !== 'm' && t.durationHours > 0) map[t.name] = (map[t.name] || 0) + t.durationHours;
                 });
                 return Object.entries(map).map(([name, sum]) => ({ name, sum }));
             }, [tasks]);
