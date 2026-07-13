@@ -723,6 +723,13 @@
                 return Object.entries(map).map(([name, sum]) => ({ name, sum }));
             }, [tasks]);
 
+            const overlapFlags = useMemo(() => {
+                return tasks.map((t, i) => {
+                    const next = tasks[i + 1];
+                    return !!(next && t.end && next.start && t.end > next.start);
+                });
+            }, [tasks]);
+
             return (
                 <div className="flex-grow-1 overflow-auto">
                     <div className="container-fluid p-3">
@@ -769,16 +776,20 @@
                                     </div>
                                     <div className="card-body p-2">
                                         {tasks.length === 0 && <p className="text-center text-muted mt-5">Keine Aufgaben erfasst.</p>}
-                                        {tasks.map((t) => (
-                                            <div key={t.id} className="input-group mb-2">
-                                                <input className="form-control" value={t.name} onChange={e => updateTask(t.id, 'name', e.target.value)} />
-                                                <input type="time" className="form-control" style={{ maxWidth: '100px' }} value={t.start} onChange={e => updateTask(t.id, 'start', e.target.value)} />
-                                                <span className="input-group-text">-</span>
-                                                <input type="time" className="form-control" style={{ maxWidth: '100px' }} value={t.end} onChange={e => updateTask(t.id, 'end', e.target.value)} />
-                                                <span className="input-group-text fw-bold text-primary" style={{ minWidth: '70px' }}>{t.durationHours > 0 ? t.durationHours.toFixed(2) + 'h' : ''}</span>
-                                                <button onClick={() => deleteTask(t.id)} className="btn btn-outline-danger"><IconTrash /></button>
-                                            </div>
-                                        ))}
+                                        {tasks.map((t, i) => {
+                                            const endConflict = overlapFlags[i];
+                                            const startConflict = i > 0 && overlapFlags[i - 1];
+                                            return (
+                                                <div key={t.id} className="input-group mb-2">
+                                                    <input className="form-control" value={t.name} onChange={e => updateTask(t.id, 'name', e.target.value)} />
+                                                    <input type="time" className="form-control" style={{ maxWidth: '100px', backgroundColor: startConflict ? '#ffd6e7' : undefined }} value={t.start} onChange={e => updateTask(t.id, 'start', e.target.value)} />
+                                                    <span className="input-group-text">-</span>
+                                                    <input type="time" className="form-control" style={{ maxWidth: '100px', backgroundColor: endConflict ? '#ffd6e7' : undefined }} value={t.end} onChange={e => updateTask(t.id, 'end', e.target.value)} />
+                                                    <span className="input-group-text fw-bold text-primary" style={{ minWidth: '70px' }}>{t.durationHours > 0 ? t.durationHours.toFixed(2) + 'h' : ''}</span>
+                                                    <button onClick={() => deleteTask(t.id)} className="btn btn-outline-danger"><IconTrash /></button>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </div>
