@@ -639,6 +639,45 @@
                 setNewTaskStart("");
             };
 
+            const addLunch = () => {
+                if (tasks.some(t => t.name === 'm')) return;
+
+                const LUNCH_START = '12:00', LUNCH_END = '12:30';
+                let updated = sortByStart(tasks);
+
+                const openIdx = updated.findIndex(t => !t.end && t.start < LUNCH_START);
+                if (openIdx !== -1) {
+                    const openTask = updated[openIdx];
+                    const closedTask = {
+                        ...openTask,
+                        end: LUNCH_START,
+                        durationHours: calcDuration(openTask.start, LUNCH_START)
+                    };
+                    const continuation = {
+                        id: Date.now().toString() + '-cont',
+                        name: openTask.name,
+                        start: LUNCH_END,
+                        end: '',
+                        durationHours: 0
+                    };
+                    updated[openIdx] = closedTask;
+                    updated.splice(openIdx + 1, 0, continuation);
+                }
+
+                const lunchItem = {
+                    id: Date.now().toString() + '-lunch',
+                    name: 'm',
+                    start: LUNCH_START,
+                    end: LUNCH_END,
+                    durationHours: calcDuration(LUNCH_START, LUNCH_END)
+                };
+                updated.push(lunchItem);
+                updated = sortByStart(updated);
+
+                setTasks(updated);
+                triggerAutosave(updated);
+            };
+
             const updateTask = (id, field, val) => {
                 const updated = tasks.map(t => {
                     if (t.id === id) {
@@ -716,7 +755,17 @@
                                 <div className="card shadow-sm">
                                     <div className="card-header bg-white d-flex justify-content-between align-items-center">
                                         <span className="fw-bold">Protokoll</span>
-                                        <button onClick={deleteDay} className="btn btn-sm btn-outline-danger" title="Delete Day"><IconTrash /></button>
+                                        <div className="d-flex gap-2">
+                                            <button
+                                                onClick={addLunch}
+                                                disabled={tasks.some(t => t.name === 'm')}
+                                                className="btn btn-sm btn-outline-secondary fw-bold"
+                                                title={tasks.some(t => t.name === 'm') ? "Mittagspause bereits erfasst" : "Mittagspause 12:00–12:30 einfügen"}
+                                            >
+                                                M
+                                            </button>
+                                            <button onClick={deleteDay} className="btn btn-sm btn-outline-danger" title="Delete Day"><IconTrash /></button>
+                                        </div>
                                     </div>
                                     <div className="card-body p-2">
                                         {tasks.length === 0 && <p className="text-center text-muted mt-5">Keine Aufgaben erfasst.</p>}
