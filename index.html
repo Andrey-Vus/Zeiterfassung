@@ -619,6 +619,9 @@
 
             const sortByStart = (list) => [...list].sort((a, b) => a.start.localeCompare(b.start));
 
+            const LUNCH_EMOJI = '🍽️';
+            const isLunch = (name) => name === LUNCH_EMOJI;
+
             const addTask = () => {
                 if (!newTaskName || !newTaskStart) return;
                 let updatedTasks = [...tasks];
@@ -630,7 +633,8 @@
                         updatedTasks[updatedTasks.length - 1] = newLast;
                     }
                 }
-                const newItem = { id: Date.now().toString(), name: newTaskName, start: newTaskStart, end: "", durationHours: 0 };
+                const taskName = /^m$/i.test(newTaskName) ? LUNCH_EMOJI : newTaskName;
+                const newItem = { id: Date.now().toString(), name: taskName, start: newTaskStart, end: "", durationHours: 0 };
                 updatedTasks.push(newItem);
                 updatedTasks = sortByStart(updatedTasks);
                 setTasks(updatedTasks);
@@ -640,7 +644,7 @@
             };
 
             const addLunch = () => {
-                if (tasks.some(t => t.name === 'm')) return;
+                if (tasks.some(t => isLunch(t.name))) return;
 
                 const LUNCH_START = '12:00', LUNCH_END = '12:30';
                 let updated = sortByStart(tasks);
@@ -666,7 +670,7 @@
 
                 const lunchItem = {
                     id: Date.now().toString() + '-lunch',
-                    name: 'm',
+                    name: LUNCH_EMOJI,
                     start: LUNCH_START,
                     end: LUNCH_END,
                     durationHours: calcDuration(LUNCH_START, LUNCH_END)
@@ -718,7 +722,7 @@
             const pivot = useMemo(() => {
                 const map = {};
                 tasks.forEach(t => {
-                    if (t.name !== 'm' && t.durationHours > 0) map[t.name] = (map[t.name] || 0) + t.durationHours;
+                    if (!isLunch(t.name) && t.durationHours > 0) map[t.name] = (map[t.name] || 0) + t.durationHours;
                 });
                 return Object.entries(map).map(([name, sum]) => ({ name, sum }));
             }, [tasks]);
@@ -765,11 +769,11 @@
                                         <div className="d-flex gap-2">
                                             <button
                                                 onClick={addLunch}
-                                                disabled={tasks.some(t => t.name === 'm')}
+                                                disabled={tasks.some(t => isLunch(t.name))}
                                                 className="btn btn-sm btn-outline-secondary fw-bold"
-                                                title={tasks.some(t => t.name === 'm') ? "Mittagspause bereits erfasst" : "Mittagspause 12:00–12:30 einfügen"}
+                                                title={tasks.some(t => isLunch(t.name)) ? "Mittagspause bereits erfasst" : "Mittagspause 12:00–12:30 einfügen"}
                                             >
-                                                M
+                                                {LUNCH_EMOJI}
                                             </button>
                                             <button onClick={deleteDay} className="btn btn-sm btn-outline-danger" title="Delete Day"><IconTrash /></button>
                                         </div>
