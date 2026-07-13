@@ -617,6 +617,8 @@
                 }, 2000); // 2s Debounce
             };
 
+            const sortByStart = (list) => [...list].sort((a, b) => a.start.localeCompare(b.start));
+
             const addTask = () => {
                 if (!newTaskName || !newTaskStart) return;
                 let updatedTasks = [...tasks];
@@ -630,6 +632,7 @@
                 }
                 const newItem = { id: Date.now().toString(), name: newTaskName, start: newTaskStart, end: "", durationHours: 0 };
                 updatedTasks.push(newItem);
+                updatedTasks = sortByStart(updatedTasks);
                 setTasks(updatedTasks);
                 triggerAutosave(updatedTasks);
                 setNewTaskName("");
