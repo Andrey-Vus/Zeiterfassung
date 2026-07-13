@@ -17,6 +17,10 @@ Im Card-Header von "Protokoll" (aktuell Zeile ~714-717 in `index.html`, neben de
 "Delete Day"-Papierkorb-Button) wird ein weiterer Button mit Label "M" ergänzt.
 Tooltip: "Mittagspause 12:00–12:30 einfügen".
 
+Pro Tag ist nur **eine** Mittagspause erlaubt. Existiert im aktuellen
+`tasks`-Array bereits ein Eintrag mit `name === 'm'`, wird der Button
+deaktiviert (`disabled`) und der Tooltip zeigt "Mittagspause bereits erfasst".
+
 ## 2. Sortier-Invariante bei jedem Insert
 
 Neue Hilfsfunktion `sortByStart(list)`:
@@ -47,6 +51,8 @@ die Zeile sortieren".
 
 ```js
 const addLunch = () => {
+    if (tasks.some(t => t.name === 'm')) return; // defensiver Guard, Button ist ohnehin disabled
+
     const LUNCH_START = '12:00', LUNCH_END = '12:30';
     let updated = sortByStart(tasks);
 
@@ -131,6 +137,6 @@ Beim Rendern der Protokoll-Zeilen (aktuell Zeile ~720-729):
 - Kein automatisches Re-Sortieren bei Inline-Edits bestehender Zeiten.
 - Kein automatischer Split für bereits abgeschlossene (nicht offene) Aufgaben,
   die zufällig mit der Mittagspause überlappen — nur visuelles Highlighting.
-- Keine Schutzmaßnahme gegen mehrfaches Klicken von "M" am selben Tag
-  (erzeugt mehrere Pausen-Einträge, falls der Nutzer das tut — bewusst nicht
-  verhindert, da nicht angefordert).
+- Pro Tag ist nur eine Mittagspause erlaubt (siehe Abschnitt 1 und 3); es wird
+  nicht unterschieden zwischen mehreren *unterschiedlichen* Pausenzeiten am
+  selben Tag — jeder Eintrag mit `name === 'm'` blockiert weitere Klicks.
