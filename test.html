@@ -1,0 +1,18 @@
+<div class="tradingview-widget-container" style="height:400px; width:100%;">
+  <div id="tradingview_brent" style="height:100%; width:100%;"></div>
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <script type="text/javascript">
+  new TradingView.widget({
+    "autosize": true,
+    "symbol": "TVC:UKOIL",          // Funktioniert garantiert im Widget
+    "interval": "D",
+    "range": "1M",
+    "timezone": "Europe/Berlin",
+    "theme": "light",
+    "style": "2",
+    "locale": "de_DE",
+    "hide_top_toolbar": true,
+    "container_id": "tradingview_brent"
+  });
+  </script>
+</div>
