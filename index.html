@@ -656,9 +656,9 @@
             };
 
             const addLunch = () => {
-                if (tasks.some(t => isLunch(t.name))) return;
+                if (!ini || tasks.some(t => isLunch(t.name))) return;
 
-                const pauseMin = ini?.defaultPauseMin ?? 30;
+                const pauseMin = ini.defaultPauseMin;
                 const now = new Date();
                 const LUNCH_START = now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
                 const LUNCH_END = addTime(LUNCH_START, 0, pauseMin);
@@ -784,11 +784,11 @@
                                         <div className="d-flex gap-2">
                                             <button
                                                 onClick={addLunch}
-                                                disabled={tasks.some(t => isLunch(t.name))}
+                                                disabled={!ini || tasks.some(t => isLunch(t.name))}
                                                 className="btn btn-sm btn-outline-secondary fw-bold"
-                                                title={tasks.some(t => isLunch(t.name)) ? "Mittagspause bereits erfasst" : `Mittagspause ab jetzt für ${ini?.defaultPauseMin ?? 30} Min. einfügen`}
+                                                title={!ini ? "Pauseneinstellungen werden geladen…" : tasks.some(t => isLunch(t.name)) ? "Mittagspause bereits erfasst" : `Mittagspause ab jetzt für ${ini.defaultPauseMin} Min. einfügen`}
                                             >
-                                                {LUNCH_EMOJI}
+                                                {LUNCH_EMOJI} {ini ? `${ini.defaultPauseMin}'` : '…'}
                                             </button>
                                             <button onClick={deleteDay} className="btn btn-sm btn-outline-danger" title="Delete Day"><IconTrash /></button>
                                         </div>
