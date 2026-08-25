@@ -139,7 +139,7 @@
             const [stats, setStats] = useState({ count: 0, loading: false });
             const [ini, setIni] = useState({
                 defaultPlanHours: [8.75, 8.5, 8.5, 8.5, 5.75],
-                defaultPauseMin: 30,
+                defaultPauseMin: 45,
                 overtimeThresholdHours: 6
             });
             const [iniLoading, setIniLoading] = useState(false);
@@ -593,8 +593,17 @@
 
             const [newTaskName, setNewTaskName] = useState("");
             const [newTaskStart, setNewTaskStart] = useState("");
+            const [ini, setIni] = useState(null);
 
             useEffect(() => { loadTasks(); }, [date]);
+
+            useEffect(() => {
+                const client = redisClient(dbAuth);
+                client.get('zeiterfassung:ini').then(res => {
+                    if (res) setIni(JSON.parse(res));
+                    else setIni({ defaultPlanHours: [8.75, 8.5, 8.5, 8.5, 5.75], defaultPauseMin: 30, overtimeThresholdHours: 6 });
+                });
+            }, []);
 
             const loadTasks = async () => {
                 setLoading(true);
@@ -649,7 +658,10 @@
             const addLunch = () => {
                 if (tasks.some(t => isLunch(t.name))) return;
 
-                const LUNCH_START = '12:00', LUNCH_END = '12:30';
+                const pauseMin = ini?.defaultPauseMin ?? 30;
+                const now = new Date();
+                const LUNCH_START = now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
+                const LUNCH_END = addTime(LUNCH_START, 0, pauseMin);
                 let updated = sortByStart(tasks);
 
                 const openIdx = updated.findIndex(t => !t.end && t.start < LUNCH_START);
@@ -774,7 +786,7 @@
                                                 onClick={addLunch}
                                                 disabled={tasks.some(t => isLunch(t.name))}
                                                 className="btn btn-sm btn-outline-secondary fw-bold"
-                                                title={tasks.some(t => isLunch(t.name)) ? "Mittagspause bereits erfasst" : "Mittagspause 12:00–12:30 einfügen"}
+                                                title={tasks.some(t => isLunch(t.name)) ? "Mittagspause bereits erfasst" : `Mittagspause ab jetzt für ${ini?.defaultPauseMin ?? 30} Min. einfügen`}
                                             >
                                                 {LUNCH_EMOJI}
                                             </button>
