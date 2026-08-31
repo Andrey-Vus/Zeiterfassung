@@ -308,9 +308,9 @@
   <h3><a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="api-key-link">🔑 API Key</a></h3>
   <input type="password" id="api-key-input" placeholder="gsk_...">
 
-  <h3>🤖 Modell</h3>
-  <button id="refresh-models-btn">↻ Modelle aktualisieren</button>
-  <div id="models-list"></div>
+  <h3 id="models-toggle" style="cursor: pointer;">🤖 Modell</h3>
+  <button id="refresh-models-btn"><span id="refresh-btn-model">Modelle aktualisieren</span> <span id="refresh-btn-icon">▾</span></button>
+  <div id="models-list" hidden></div>
 
   <h3>System-Prompts</h3>
 
@@ -355,6 +355,9 @@ const spTexts      = [0, 1, 2].map(i => document.getElementById(`sp-text-${i}`))
 const apiKeyInput  = document.getElementById('api-key-input');
 const modelsList   = document.getElementById('models-list');
 const refreshModelsBtn = document.getElementById('refresh-models-btn');
+const refreshBtnModel = document.getElementById('refresh-btn-model');
+const refreshBtnIcon = document.getElementById('refresh-btn-icon');
+const modelsToggle = document.getElementById('models-toggle');
 
 // ── State ──
 let chatHistory  = [];
@@ -441,11 +444,15 @@ function getSelectedModel() {
   return currentModel || SAFE_DEFAULT_MODELS[0];
 }
 
-async function loadModels() {
-  const apiKey = getApiKey();
+async function loadModels(opts = {}) {
+  const silent = !!opts.silent;
+  const apiKey = silent ? apiKeyInput.value.trim() : getApiKey();
   if (!apiKey) return;
 
-  setStatus('Modelle werden geladen...');
+  if (!silent) {
+    setStatus('Modelle werden geladen...');
+    modelsList.hidden = false;
+  }
   modelsList.innerHTML = '<div style="padding: 12px; text-align: center; color: #888;">Lädt...</div>';
 
   try {
@@ -462,21 +469,29 @@ async function loadModels() {
     availableModels = (data.data || [])
       .map(m => m.id)
       .filter(Boolean)
-      .filter(isChatModel);
+      .filter(isChatModel)
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
     if (availableModels.length === 0) {
       throw new Error('Keine Chat-Modelle für diesen API-Key verfügbar.');
     }
+    const previousModel = currentModel;
     if (!availableModels.includes(currentModel)) {
       currentModel = getFallbackModel();
       localStorage.setItem('kai_model', currentModel);
     }
     updateModelIndicator();
     renderModelsList();
-    setStatus('');
+    if (!silent) {
+      setStatus('');
+    } else if (currentModel !== previousModel) {
+      setStatus(`Modell "${previousModel}" nicht mehr verfügbar – auf "${currentModel}" aktualisiert.`);
+    }
   } catch (err) {
-    setStatus(err.message);
-    modelsList.innerHTML = '<div style="padding: 12px; text-align: center; color: #e74c3c;">Fehler beim Laden</div>';
+    if (!silent) {
+      setStatus(err.message);
+      modelsList.innerHTML = '<div style="padding: 12px; text-align: center; color: #e74c3c;">Fehler beim Laden</div>';
+    }
   }
 }
 
@@ -496,15 +511,23 @@ function renderModelsList() {
       updateModelIndicator();
       renderModelsList();
       setStatus(`Modell gewählt: ${model}`);
+      modelsList.hidden = true;
     });
     modelsList.appendChild(div);
   });
 }
 
-refreshModelsBtn.addEventListener('click', loadModels);
+function toggleModelsList() {
+  if (availableModels.length === 0) return;
+  modelsList.hidden = !modelsList.hidden;
+  refreshBtnIcon.textContent = modelsList.hidden ? '▾' : '▴';
+}
+refreshModelsBtn.addEventListener('click', toggleModelsList);
+modelsToggle.addEventListener('click', toggleModelsList);
 apiKeyInput.addEventListener('change', () => {
   localStorage.setItem('kai_api_key', apiKeyInput.value.trim());
   setStatus('API Key gespeichert');
+  loadModels({ silent: true });
 });
 
 function saveHistory() {
@@ -538,7 +561,8 @@ function renderMessages() {
 function setStatus(text) { statusEl.textContent = text; }
 
 function updateModelIndicator() {
-  activeModelName.textContent = currentModel || 'nicht gesetzt';
+  activeModelName.textContent = currentModel || SAFE_DEFAULT_MODELS[0];
+  refreshBtnModel.textContent = currentModel || SAFE_DEFAULT_MODELS[0];
 }
 
 function pushMessage(role, content) {
@@ -740,6 +764,7 @@ document.querySelectorAll('input[name="sp"]').forEach(r => r.addEventListener('c
 loadCache();
 updateModelIndicator();
 renderMessages();
+loadModels({ silent: true });
 </script>
 </body>
 </html>
