@@ -65,6 +65,14 @@
       min-height: 18px;
     }
 
+    #model-indicator {
+      text-align: center;
+      font-size: 12px;
+      color: #9ab0ff;
+      min-height: 18px;
+      padding-top: 2px;
+    }
+
     #input-area {
       display: flex;
       align-items: flex-end;
@@ -286,6 +294,7 @@
 <!-- Linke Seite -->
 <div id="chat-container">
   <div id="chat-messages"></div>
+  <div id="model-indicator">Modell: <span id="active-model-name">-</span></div>
   <div id="status"></div>
   <div id="input-area">
     <button id="mic-btn" title="Aufnehmen / Stoppen">🎤</button>
@@ -339,6 +348,8 @@ const textInput    = document.getElementById('text-input');
 const micBtn       = document.getElementById('mic-btn');
 const sendBtn      = document.getElementById('send-btn');
 const statusEl     = document.getElementById('status');
+const modelIndicator = document.getElementById('model-indicator');
+const activeModelName = document.getElementById('active-model-name');
 const resetBtn     = document.getElementById('reset-btn');
 const spTexts      = [0, 1, 2].map(i => document.getElementById(`sp-text-${i}`));
 const apiKeyInput  = document.getElementById('api-key-input');
@@ -390,6 +401,18 @@ function getApiKey() {
   return key;
 }
 
+function isChatModel(modelId) {
+  const lower = (modelId || '').toLowerCase();
+  return !(
+    lower.includes('whisper') ||
+    lower.includes('transcription') ||
+    lower.includes('tts') ||
+    lower.includes('speech') ||
+    lower.includes('audio') ||
+    lower.includes('text-to-speech')
+  );
+}
+
 function getSelectedModel() {
   if (availableModels.length > 0) {
     if (availableModels.includes(currentModel)) return currentModel;
@@ -423,9 +446,13 @@ async function loadModels() {
       throw new Error(`HTTP ${res.status}`);
     }
     const data = await res.json();
-    availableModels = (data.data || []).map(m => m.id).filter(Boolean);
+    availableModels = (data.data || [])
+      .map(m => m.id)
+      .filter(Boolean)
+      .filter(isChatModel);
+
     if (availableModels.length === 0) {
-      throw new Error('Keine Modelle für diesen API-Key verfügbar.');
+      throw new Error('Keine Chat-Modelle für diesen API-Key verfügbar.');
     }
     if (!availableModels.includes(currentModel)) {
       currentModel = availableModels.includes('llama-3.3-70b-versatile')
@@ -433,6 +460,7 @@ async function loadModels() {
         : availableModels[0];
       localStorage.setItem('kai_model', currentModel);
     }
+    updateModelIndicator();
     renderModelsList();
     setStatus('');
   } catch (err) {
@@ -454,6 +482,7 @@ function renderModelsList() {
     div.querySelector('input').addEventListener('change', () => {
       currentModel = model;
       localStorage.setItem('kai_model', model);
+      updateModelIndicator();
       renderModelsList();
       setStatus(`Modell gewählt: ${model}`);
     });
@@ -496,6 +525,10 @@ function renderMessages() {
 }
 
 function setStatus(text) { statusEl.textContent = text; }
+
+function updateModelIndicator() {
+  activeModelName.textContent = currentModel || 'nicht gesetzt';
+}
 
 function pushMessage(role, content) {
   chatHistory.push({ role, content });
@@ -695,6 +728,7 @@ document.querySelectorAll('input[name="sp"]').forEach(r => r.addEventListener('c
 
 // ── Start ──
 loadCache();
+updateModelIndicator();
 renderMessages();
 </script>
 </body>
