@@ -647,6 +647,17 @@ async function transcribe(blob, mime) {
 }
 
 // ── Chat ──
+function chatRequest(apiKey, model, messages) {
+  return fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ model, messages, temperature: 0.7 }),
+  });
+}
+
 async function sendMessage() {
   const text = textInput.value.trim();
   if (!text) return;
@@ -666,29 +677,28 @@ async function sendMessage() {
   ];
 
   try {
-    const modelToUse = getSelectedModel();
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: modelToUse,
-        messages,
-        temperature: 0.7,
-      }),
-    });
-    if (!res.ok) {
-      if (res.status === 403) {
-        const fallback = getFallbackModel();
+    let modelToUse = getSelectedModel();
+    let res = await chatRequest(apiKey, modelToUse, messages);
+
+    if (res.status === 403) {
+      const rejectedModel = modelToUse;
+      const fallback = getFallbackModel();
+
+      if (fallback !== rejectedModel) {
         currentModel = fallback;
         localStorage.setItem('kai_model', fallback);
         updateModelIndicator();
         renderModelsList();
-        throw new Error(`HTTP 403 – Modell "${modelToUse}" nicht freigegeben. Auf "${fallback}" zurückgesetzt.`);
+        setStatus(`Modell "${rejectedModel}" nicht freigegeben – wiederhole mit "${fallback}"…`);
+        modelToUse = fallback;
+        res = await chatRequest(apiKey, modelToUse, messages);
       }
-      throw new Error(`HTTP ${res.status}`);
+    }
+
+    if (!res.ok) {
+      throw new Error(res.status === 403
+        ? `HTTP 403 – Modell "${modelToUse}" nicht freigegeben.`
+        : `HTTP ${res.status}`);
     }
     const data  = await res.json();
     const reply = data.choices[0].message.content.trim();
