@@ -388,19 +388,9 @@ function loadCache() {
   const savedApiKey = localStorage.getItem('kai_api_key');
   if (savedApiKey) apiKeyInput.value = savedApiKey;
 
-  const savedModel = localStorage.getItem('kai_model');
-  if (savedModel) {
-    const cleaned = (savedModel || '').trim();
-    if (cleaned && cleaned !== 'allam-2-7b' && cleaned !== 'allam') {
-      currentModel = cleaned;
-    } else {
-      currentModel = SAFE_DEFAULT_MODELS[0];
-      localStorage.setItem('kai_model', SAFE_DEFAULT_MODELS[0]);
-    }
-  } else {
-    currentModel = SAFE_DEFAULT_MODELS[0];
-    localStorage.setItem('kai_model', SAFE_DEFAULT_MODELS[0]);
-  }
+  const cleaned = (localStorage.getItem('kai_model') || '').trim();
+  currentModel = cleaned && isChatModel(cleaned) ? cleaned : SAFE_DEFAULT_MODELS[0];
+  localStorage.setItem('kai_model', currentModel);
 }
 
 function getApiKey() {
@@ -422,8 +412,9 @@ function isChatModel(modelId) {
     lower.includes('speech') ||
     lower.includes('audio') ||
     lower.includes('text-to-speech') ||
-    lower.includes('allam-2-7b') ||
-    lower.includes('allam')
+    lower.includes('allam') ||
+    lower.includes('guard') ||
+    lower.includes('moderation')
   );
 }
 
@@ -475,7 +466,7 @@ async function loadModels() {
     if (availableModels.length === 0) {
       throw new Error('Keine Chat-Modelle für diesen API-Key verfügbar.');
     }
-    if (!availableModels.includes(currentModel) || currentModel === 'allam-2-7b' || currentModel === 'allam') {
+    if (!availableModels.includes(currentModel)) {
       currentModel = getFallbackModel();
       localStorage.setItem('kai_model', currentModel);
     }
