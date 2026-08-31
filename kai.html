@@ -173,6 +173,14 @@
       border-bottom: 1px solid var(--border);
     }
 
+    #models-toggle {
+      text-transform: none;
+      letter-spacing: normal;
+      word-break: break-all;
+    }
+
+    #current-model-name { color: var(--fg); font-family: monospace; }
+
     .prompt-item { display: flex; flex-direction: column; gap: 5px; }
 
     .prompt-header {
@@ -266,17 +274,6 @@
 
     .model-item.selected { background: var(--blue); color: var(--bg-dark); }
 
-    #current-model-display {
-      width: 100%;
-      padding: 8px;
-      background: var(--bg-highlight);
-      color: var(--fg);
-      border: 1px solid var(--blue);
-      border-radius: 6px;
-      font-size: 12px;
-      text-align: center;
-    }
-
     #reset-btn {
       margin-top: auto;
       padding: 10px;
@@ -314,8 +311,7 @@
   <h3><a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="api-key-link">🔑 API Key</a></h3>
   <input type="password" id="api-key-input" placeholder="gsk_...">
 
-  <h3 id="models-toggle" style="cursor: pointer;">🤖 Modell <span id="models-toggle-icon">▾</span></h3>
-  <div id="current-model-display"><span id="current-model-name">Modelle aktualisieren</span></div>
+  <h3 id="models-toggle" style="cursor: pointer;">🤖 Modell: <span id="current-model-name">…</span> <span id="models-toggle-icon">▾</span></h3>
   <div id="models-list" hidden></div>
 
   <h3>System-Prompts</h3>
