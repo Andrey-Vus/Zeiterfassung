@@ -5,12 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KAI – KI Assistent</title>
   <style>
+    :root {
+      --bg: #1a1b26;
+      --bg-dark: #16161e;
+      --bg-panel: #1f2335;
+      --bg-highlight: #292e42;
+      --border: #2a2e42;
+      --fg: #c0caf5;
+      --fg-dim: #a9b1d6;
+      --comment: #565f89;
+      --blue: #7aa2f7;
+      --blue-bright: #89ddff;
+      --magenta: #bb9af7;
+      --green: #9ece6a;
+      --red: #f7768e;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #1a1a2e;
-      color: #e0e0e0;
+      background: var(--bg);
+      color: var(--fg);
       height: 100vh;
       display: flex;
       overflow: hidden;
@@ -45,15 +61,15 @@
     }
 
     .message.user {
-      background: #4a6cf7;
-      color: #fff;
+      background: var(--blue);
+      color: var(--bg-dark);
       align-self: flex-end;
       border-bottom-right-radius: 4px;
     }
 
     .message.assistant {
-      background: #2d2d44;
-      color: #e0e0e0;
+      background: var(--bg-highlight);
+      color: var(--fg);
       align-self: flex-start;
       border-bottom-left-radius: 4px;
     }
@@ -61,16 +77,8 @@
     #status {
       text-align: center;
       font-size: 13px;
-      color: #888;
+      color: var(--comment);
       min-height: 18px;
-    }
-
-    #model-indicator {
-      text-align: center;
-      font-size: 12px;
-      color: #9ab0ff;
-      min-height: 18px;
-      padding-top: 2px;
     }
 
     #input-area {
@@ -78,7 +86,7 @@
       align-items: flex-end;
       gap: 10px;
       padding: 10px 14px;
-      background: #16213e;
+      background: var(--bg-panel);
       border-radius: 28px;
     }
 
@@ -87,8 +95,8 @@
       height: 52px;
       border-radius: 50%;
       border: none;
-      background: #4a6cf7;
-      color: #fff;
+      background: var(--blue);
+      color: var(--bg-dark);
       font-size: 22px;
       cursor: pointer;
       flex-shrink: 0;
@@ -99,20 +107,20 @@
     }
 
     #mic-btn.recording {
-      background: #e74c3c;
+      background: var(--red);
       animation: pulse 1.1s infinite;
     }
 
     @keyframes pulse {
-      0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0   rgba(231,76,60,.5); }
-      50%       { transform: scale(1.07); box-shadow: 0 0 0 10px rgba(231,76,60,0); }
+      0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0   rgba(247,118,142,.5); }
+      50%       { transform: scale(1.07); box-shadow: 0 0 0 10px rgba(247,118,142,0); }
     }
 
     #text-input {
       flex: 1;
       background: transparent;
       border: none;
-      color: #e0e0e0;
+      color: var(--fg);
       font-size: 15px;
       outline: none;
       resize: none;
@@ -123,15 +131,15 @@
       font-family: inherit;
     }
 
-    #text-input::placeholder { color: #555; }
+    #text-input::placeholder { color: var(--comment); }
 
     #send-btn {
       width: 44px;
       height: 44px;
       border-radius: 50%;
       border: none;
-      background: #4a6cf7;
-      color: #fff;
+      background: var(--blue);
+      color: var(--bg-dark);
       font-size: 18px;
       cursor: pointer;
       flex-shrink: 0;
@@ -141,28 +149,28 @@
       transition: background 0.2s;
     }
 
-    #send-btn:hover:not(:disabled) { background: #6080ff; }
+    #send-btn:hover:not(:disabled) { background: var(--blue-bright); }
     #send-btn:disabled { opacity: 0.4; cursor: default; }
 
     /* ── Rechte Seite: System-Prompts ── */
     #side-panel {
       width: 290px;
-      background: #16213e;
+      background: var(--bg-panel);
       padding: 20px 16px;
       display: flex;
       flex-direction: column;
       gap: 14px;
-      border-left: 1px solid #2a2a40;
+      border-left: 1px solid var(--border);
       overflow-y: auto;
     }
 
     #side-panel h3 {
-      color: #4a6cf7;
+      color: var(--magenta);
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 1.5px;
       padding-bottom: 4px;
-      border-bottom: 1px solid #2a2a40;
+      border-bottom: 1px solid var(--border);
     }
 
     .prompt-item { display: flex; flex-direction: column; gap: 5px; }
@@ -173,19 +181,19 @@
       gap: 8px;
     }
 
-    .prompt-header input[type="radio"] { accent-color: #4a6cf7; cursor: pointer; }
+    .prompt-header input[type="radio"] { accent-color: var(--blue); cursor: pointer; }
 
     .prompt-header label {
       font-size: 13px;
-      color: #aaa;
+      color: var(--fg-dim);
       cursor: pointer;
     }
 
     .prompt-textarea {
       width: 100%;
-      background: #1a1a2e;
-      border: 1px solid #2a2a40;
-      color: #e0e0e0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--fg);
       border-radius: 8px;
       padding: 8px 10px;
       font-size: 13px;
@@ -197,14 +205,14 @@
       transition: border-color 0.2s;
     }
 
-    .prompt-textarea:focus { border-color: #4a6cf7; }
+    .prompt-textarea:focus { border-color: var(--blue); }
 
     #api-key-input {
       width: 100%;
       height: 36px;
-      background: #1a1a2e;
-      border: 1px solid #2a2a40;
-      color: #e0e0e0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--fg);
       border-radius: 6px;
       padding: 6px 8px;
       font-size: 12px;
@@ -213,11 +221,11 @@
       transition: border-color 0.2s;
     }
 
-    #api-key-input:focus { border-color: #4a6cf7; }
+    #api-key-input:focus { border-color: var(--blue); }
 
     .api-key-link,
     .api-key-link:visited {
-      color: #4a6cf7;
+      color: var(--blue);
       text-decoration: none;
     }
 
@@ -228,8 +236,8 @@
     #models-list {
       max-height: 200px;
       overflow-y: auto;
-      background: #1a1a2e;
-      border: 1px solid #2a2a40;
+      background: var(--bg);
+      border: 1px solid var(--border);
       border-radius: 6px;
       padding: 6px;
       display: flex;
@@ -242,51 +250,51 @@
       align-items: center;
       gap: 8px;
       padding: 8px;
-      background: #2a2a40;
+      background: var(--bg-highlight);
       border-radius: 4px;
       cursor: pointer;
       font-size: 12px;
-      color: #aaa;
+      color: var(--fg-dim);
       transition: background 0.2s;
     }
 
-    .model-item:hover { background: #3a3a50; }
+    .model-item:hover { background: var(--border); }
 
-    .model-item input[type="radio"] { accent-color: #4a6cf7; cursor: pointer; }
+    .model-item input[type="radio"] { accent-color: var(--blue); cursor: pointer; }
 
-    .model-item.selected { background: #4a6cf7; color: #fff; }
+    .model-item.selected { background: var(--blue); color: var(--bg-dark); }
 
     #refresh-models-btn {
       width: 100%;
       padding: 8px;
-      background: #2a4a8f;
-      color: #e0e0e0;
-      border: 1px solid #4a6cf7;
+      background: var(--bg-highlight);
+      color: var(--fg);
+      border: 1px solid var(--blue);
       border-radius: 6px;
       cursor: pointer;
       font-size: 12px;
       transition: background 0.2s;
     }
 
-    #refresh-models-btn:hover { background: #3a5a9f; }
+    #refresh-models-btn:hover { background: var(--border); }
 
     #reset-btn {
       margin-top: auto;
       padding: 10px;
       background: transparent;
-      color: #e74c3c;
-      border: 1px solid #e74c3c;
+      color: var(--red);
+      border: 1px solid var(--red);
       border-radius: 8px;
       cursor: pointer;
       font-size: 13px;
       transition: background 0.2s, color 0.2s;
     }
 
-    #reset-btn:hover { background: #e74c3c; color: #fff; }
+    #reset-btn:hover { background: var(--red); color: var(--bg-dark); }
 
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #2d2d44; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: var(--bg-highlight); border-radius: 3px; }
   </style>
 </head>
 <body>
@@ -294,7 +302,6 @@
 <!-- Linke Seite -->
 <div id="chat-container">
   <div id="chat-messages"></div>
-  <div id="model-indicator">Modell: <span id="active-model-name">-</span></div>
   <div id="status"></div>
   <div id="input-area">
     <button id="mic-btn" title="Aufnehmen / Stoppen">🎤</button>
@@ -348,8 +355,6 @@ const textInput    = document.getElementById('text-input');
 const micBtn       = document.getElementById('mic-btn');
 const sendBtn      = document.getElementById('send-btn');
 const statusEl     = document.getElementById('status');
-const modelIndicator = document.getElementById('model-indicator');
-const activeModelName = document.getElementById('active-model-name');
 const resetBtn     = document.getElementById('reset-btn');
 const spTexts      = [0, 1, 2].map(i => document.getElementById(`sp-text-${i}`));
 const apiKeyInput  = document.getElementById('api-key-input');
@@ -456,7 +461,7 @@ async function loadModels(opts = {}) {
     setStatus('Modelle werden geladen...');
     modelsList.hidden = false;
   }
-  modelsList.innerHTML = '<div style="padding: 12px; text-align: center; color: #888;">Lädt...</div>';
+  modelsList.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--comment);">Lädt...</div>';
 
   try {
     const res = await fetch('https://api.groq.com/openai/v1/models', {
@@ -493,7 +498,7 @@ async function loadModels(opts = {}) {
   } catch (err) {
     if (!silent) {
       setStatus(err.message);
-      modelsList.innerHTML = '<div style="padding: 12px; text-align: center; color: #e74c3c;">Fehler beim Laden</div>';
+      modelsList.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--red);">Fehler beim Laden</div>';
     }
   }
 }
@@ -501,7 +506,7 @@ async function loadModels(opts = {}) {
 function renderModelsList() {
   modelsList.innerHTML = '';
   if (availableModels.length === 0) {
-    modelsList.innerHTML = '<div style="padding: 12px; text-align: center; color: #888;">Keine Modelle</div>';
+    modelsList.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--comment);">Keine Modelle</div>';
     return;
   }
   availableModels.forEach((model, idx) => {
@@ -564,7 +569,6 @@ function renderMessages() {
 function setStatus(text) { statusEl.textContent = text; }
 
 function updateModelIndicator() {
-  activeModelName.textContent = currentModel || SAFE_DEFAULT_MODELS[0];
   refreshBtnModel.textContent = currentModel || SAFE_DEFAULT_MODELS[0];
 }
 
