@@ -291,6 +291,22 @@
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--bg-highlight); border-radius: 3px; }
+
+    /* ── Smartphone ── */
+    @media (max-width: 700px) {
+      body { flex-direction: column; }
+
+      #chat-container { padding: 12px; }
+
+      .message { max-width: 88%; }
+
+      #side-panel {
+        width: 100%;
+        max-height: 45vh;
+        border-left: none;
+        border-top: 1px solid var(--border);
+      }
+    }
   </style>
 </head>
 <body>
