@@ -245,6 +245,8 @@
       gap: 4px;
     }
 
+    #models-list[hidden] { display: none; }
+
     .model-item {
       display: flex;
       align-items: center;
@@ -264,19 +266,16 @@
 
     .model-item.selected { background: var(--blue); color: var(--bg-dark); }
 
-    #refresh-models-btn {
+    #current-model-display {
       width: 100%;
       padding: 8px;
       background: var(--bg-highlight);
       color: var(--fg);
       border: 1px solid var(--blue);
       border-radius: 6px;
-      cursor: pointer;
       font-size: 12px;
-      transition: background 0.2s;
+      text-align: center;
     }
-
-    #refresh-models-btn:hover { background: var(--border); }
 
     #reset-btn {
       margin-top: auto;
@@ -315,8 +314,8 @@
   <h3><a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="api-key-link">🔑 API Key</a></h3>
   <input type="password" id="api-key-input" placeholder="gsk_...">
 
-  <h3 id="models-toggle" style="cursor: pointer;">🤖 Modell</h3>
-  <button id="refresh-models-btn"><span id="refresh-btn-model">Modelle aktualisieren</span> <span id="refresh-btn-icon">▾</span></button>
+  <h3 id="models-toggle" style="cursor: pointer;">🤖 Modell <span id="models-toggle-icon">▾</span></h3>
+  <div id="current-model-display"><span id="current-model-name">Modelle aktualisieren</span></div>
   <div id="models-list" hidden></div>
 
   <h3>System-Prompts</h3>
@@ -359,10 +358,9 @@ const resetBtn     = document.getElementById('reset-btn');
 const spTexts      = [0, 1, 2].map(i => document.getElementById(`sp-text-${i}`));
 const apiKeyInput  = document.getElementById('api-key-input');
 const modelsList   = document.getElementById('models-list');
-const refreshModelsBtn = document.getElementById('refresh-models-btn');
-const refreshBtnModel = document.getElementById('refresh-btn-model');
-const refreshBtnIcon = document.getElementById('refresh-btn-icon');
+const currentModelName = document.getElementById('current-model-name');
 const modelsToggle = document.getElementById('models-toggle');
+const modelsToggleIcon = document.getElementById('models-toggle-icon');
 
 // ── State ──
 let chatHistory  = [];
@@ -528,9 +526,8 @@ function renderModelsList() {
 function toggleModelsList() {
   if (availableModels.length === 0) return;
   modelsList.hidden = !modelsList.hidden;
-  refreshBtnIcon.textContent = modelsList.hidden ? '▾' : '▴';
+  modelsToggleIcon.textContent = modelsList.hidden ? '▾' : '▴';
 }
-refreshModelsBtn.addEventListener('click', toggleModelsList);
 modelsToggle.addEventListener('click', toggleModelsList);
 apiKeyInput.addEventListener('change', () => {
   localStorage.setItem('kai_api_key', apiKeyInput.value.trim());
@@ -569,7 +566,7 @@ function renderMessages() {
 function setStatus(text) { statusEl.textContent = text; }
 
 function updateModelIndicator() {
-  refreshBtnModel.textContent = currentModel || SAFE_DEFAULT_MODELS[0];
+  currentModelName.textContent = currentModel || SAFE_DEFAULT_MODELS[0];
 }
 
 function pushMessage(role, content) {
