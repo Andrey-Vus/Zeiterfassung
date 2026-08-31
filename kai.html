@@ -362,7 +362,8 @@ let isRecording  = false;
 let mediaRecorder = null;
 let audioChunks  = [];
 let availableModels = [];
-let currentModel = 'compound';
+const SAFE_DEFAULT_MODELS = ['compound'];
+let currentModel = localStorage.getItem('kai_model') || SAFE_DEFAULT_MODELS[0];
 
 // ── Default-Prompts ──
 const DEFAULT_PROMPTS = [
@@ -388,7 +389,18 @@ function loadCache() {
   if (savedApiKey) apiKeyInput.value = savedApiKey;
 
   const savedModel = localStorage.getItem('kai_model');
-  if (savedModel) currentModel = savedModel;
+  if (savedModel) {
+    const cleaned = (savedModel || '').trim();
+    if (cleaned && cleaned !== 'allam-2-7b' && cleaned !== 'allam') {
+      currentModel = cleaned;
+    } else {
+      currentModel = SAFE_DEFAULT_MODELS[0];
+      localStorage.setItem('kai_model', SAFE_DEFAULT_MODELS[0]);
+    }
+  } else {
+    currentModel = SAFE_DEFAULT_MODELS[0];
+    localStorage.setItem('kai_model', SAFE_DEFAULT_MODELS[0]);
+  }
 }
 
 function getApiKey() {
@@ -409,23 +421,32 @@ function isChatModel(modelId) {
     lower.includes('tts') ||
     lower.includes('speech') ||
     lower.includes('audio') ||
-    lower.includes('text-to-speech')
+    lower.includes('text-to-speech') ||
+    lower.includes('allam-2-7b') ||
+    lower.includes('allam')
   );
+}
+
+function getFallbackModel() {
+  if (availableModels.length > 0) {
+    const preferred = SAFE_DEFAULT_MODELS.find(m => availableModels.includes(m));
+    return preferred || availableModels[0];
+  }
+  return SAFE_DEFAULT_MODELS[0];
 }
 
 function getSelectedModel() {
   if (availableModels.length > 0) {
-    if (availableModels.includes(currentModel)) return currentModel;
-    const fallback = availableModels.includes('compound')
-      ? 'compound'
-      : availableModels[0];
+    const cleanedCurrent = (currentModel || '').trim();
+    if (cleanedCurrent && availableModels.includes(cleanedCurrent)) return cleanedCurrent;
+    const fallback = getFallbackModel();
     currentModel = fallback;
     localStorage.setItem('kai_model', fallback);
     renderModelsList();
     return fallback;
   }
 
-  return currentModel || 'compound';
+  return currentModel || SAFE_DEFAULT_MODELS[0];
 }
 
 async function loadModels() {
@@ -454,10 +475,8 @@ async function loadModels() {
     if (availableModels.length === 0) {
       throw new Error('Keine Chat-Modelle für diesen API-Key verfügbar.');
     }
-    if (!availableModels.includes(currentModel)) {
-      currentModel = availableModels.includes('compound')
-        ? 'compound'
-        : availableModels[0];
+    if (!availableModels.includes(currentModel) || currentModel === 'allam-2-7b' || currentModel === 'allam') {
+      currentModel = getFallbackModel();
       localStorage.setItem('kai_model', currentModel);
     }
     updateModelIndicator();
@@ -646,9 +665,7 @@ async function sendMessage() {
     });
     if (!res.ok) {
       if (res.status === 403) {
-        const fallback = availableModels.includes('compound')
-          ? 'compound'
-          : (availableModels[0] || 'compound');
+        const fallback = getFallbackModel();
         currentModel = fallback;
         localStorage.setItem('kai_model', fallback);
         renderModelsList();
