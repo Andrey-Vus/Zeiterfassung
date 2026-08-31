@@ -402,6 +402,17 @@ function getApiKey() {
 }
 
 function getSelectedModel() {
+  if (availableModels.length > 0) {
+    if (availableModels.includes(currentModel)) return currentModel;
+    const fallback = availableModels.includes('llama-3.3-70b-versatile')
+      ? 'llama-3.3-70b-versatile'
+      : availableModels[0];
+    currentModel = fallback;
+    localStorage.setItem('kai_model', fallback);
+    renderModelsList();
+    return fallback;
+  }
+
   return currentModel || 'llama-3.3-70b-versatile';
 }
 
@@ -416,13 +427,27 @@ async function loadModels() {
     const res = await fetch('https://api.groq.com/openai/v1/models', {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      if (res.status === 403) {
+        throw new Error('HTTP 403 – API-Key oder Modell-Zugriff nicht erlaubt. Bitte in groq/keys prüfen.');
+      }
+      throw new Error(`HTTP ${res.status}`);
+    }
     const data = await res.json();
-    availableModels = data.data.map(m => m.id);
+    availableModels = (data.data || []).map(m => m.id).filter(Boolean);
+    if (availableModels.length === 0) {
+      throw new Error('Keine Modelle für diesen API-Key verfügbar.');
+    }
+    if (!availableModels.includes(currentModel)) {
+      currentModel = availableModels.includes('llama-3.3-70b-versatile')
+        ? 'llama-3.3-70b-versatile'
+        : availableModels[0];
+      localStorage.setItem('kai_model', currentModel);
+    }
     renderModelsList();
     setStatus('');
   } catch (err) {
-    setStatus('Fehler beim Laden der Modelle: ' + err.message);
+    setStatus(err.message);
     modelsList.innerHTML = '<div style="padding: 12px; text-align: center; color: #e74c3c;">Fehler beim Laden</div>';
   }
 }
@@ -584,6 +609,7 @@ async function sendMessage() {
   ];
 
   try {
+    const modelToUse = getSelectedModel();
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -591,12 +617,23 @@ async function sendMessage() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: getSelectedModel(),
+        model: modelToUse,
         messages,
         temperature: 0.7,
       }),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      if (res.status === 403) {
+        const fallback = availableModels.includes('llama-3.3-70b-versatile')
+          ? 'llama-3.3-70b-versatile'
+          : (availableModels[0] || 'llama-3.3-70b-versatile');
+        currentModel = fallback;
+        localStorage.setItem('kai_model', fallback);
+        renderModelsList();
+        throw new Error(`HTTP 403 – Modell "${modelToUse}" nicht freigegeben. Auf "${fallback}" zurückgesetzt.`);
+      }
+      throw new Error(`HTTP ${res.status}`);
+    }
     const data  = await res.json();
     const reply = data.choices[0].message.content.trim();
 
