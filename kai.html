@@ -362,7 +362,7 @@ let isRecording  = false;
 let mediaRecorder = null;
 let audioChunks  = [];
 let availableModels = [];
-let currentModel = 'llama-3.3-70b-versatile';
+let currentModel = 'compound';
 
 // ── Default-Prompts ──
 const DEFAULT_PROMPTS = [
@@ -416,8 +416,8 @@ function isChatModel(modelId) {
 function getSelectedModel() {
   if (availableModels.length > 0) {
     if (availableModels.includes(currentModel)) return currentModel;
-    const fallback = availableModels.includes('llama-3.3-70b-versatile')
-      ? 'llama-3.3-70b-versatile'
+    const fallback = availableModels.includes('compound')
+      ? 'compound'
       : availableModels[0];
     currentModel = fallback;
     localStorage.setItem('kai_model', fallback);
@@ -425,7 +425,7 @@ function getSelectedModel() {
     return fallback;
   }
 
-  return currentModel || 'llama-3.3-70b-versatile';
+  return currentModel || 'compound';
 }
 
 async function loadModels() {
@@ -455,8 +455,8 @@ async function loadModels() {
       throw new Error('Keine Chat-Modelle für diesen API-Key verfügbar.');
     }
     if (!availableModels.includes(currentModel)) {
-      currentModel = availableModels.includes('llama-3.3-70b-versatile')
-        ? 'llama-3.3-70b-versatile'
+      currentModel = availableModels.includes('compound')
+        ? 'compound'
         : availableModels[0];
       localStorage.setItem('kai_model', currentModel);
     }
@@ -646,9 +646,9 @@ async function sendMessage() {
     });
     if (!res.ok) {
       if (res.status === 403) {
-        const fallback = availableModels.includes('llama-3.3-70b-versatile')
-          ? 'llama-3.3-70b-versatile'
-          : (availableModels[0] || 'llama-3.3-70b-versatile');
+        const fallback = availableModels.includes('compound')
+          ? 'compound'
+          : (availableModels[0] || 'compound');
         currentModel = fallback;
         localStorage.setItem('kai_model', fallback);
         renderModelsList();
