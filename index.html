@@ -425,7 +425,69 @@
                         }
                         data = { year, isoWeek: kw, days };
                     }
+
+                    // --- START / ENDE AUS DEN TAGESAUFGABEN ÜBERNEHMEN ---
+                    let updated = false;
+                    for (let day of data.days) {
+                        // Nur abfragen/ergänzen, wenn Start oder Ende noch leer sind
+                        if (!day.start || !day.end) {
+                            try {
+                                const taskRes = await client.get(`zeiterfassung:tasks:${day.dateISO}`);
+                                if (taskRes) {
+                                    const parsedTasks = JSON.parse(taskRes);
+                                    const rows = parsedTasks.rows || [];
+
+                                    if (rows.length > 0) {
+                                        // 1. Erste Aufgabe: Startzeit nehmen (falls noch nicht vorhanden)
+                                        if (!day.start && rows[0].start) {
+                                            day.start = rows[0].start;
+                                            updated = true;
+                                        }
+
+                                        // 2. Letzte Aufgabe: Letzte eingetragene Endzeit nehmen (falls vorhanden)
+                                        if (!day.end) {
+                                            for (let k = rows.length - 1; k >= 0; k--) {
+                                                if (rows[k].end) {
+                                                    day.end = rows[k].end;
+                                                    updated = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (err) {
+                                console.error("Fehler beim Laden der Aufgaben für " + day.dateISO, err);
+                            }
+                        }
+
+                        // Ist-Stunden & Überstunden für den Tag berechnen
+                        const startDec = timeToDecimal(day.start);
+                        const endDec = timeToDecimal(day.end);
+                        const plan = parseFloat(day.planHours) || 0;
+                        const pause = parseInt(day.pauseMin) || 0;
+
+                        if (day.start && plan > 0) day.forecastEnd = addTime(day.start, plan, pause);
+                        else day.forecastEnd = "";
+
+                        if (day.start && day.end) {
+                            const grossDuration = endDec - startDec;
+                            const netDuration = grossDuration - (pause / 60);
+                            day.actualHours = parseFloat(netDuration.toFixed(2));
+                            day.overtimeHours = parseFloat((day.actualHours - plan).toFixed(2));
+                        } else {
+                            day.actualHours = 0;
+                            day.overtimeHours = 0;
+                        }
+                    }
+
                     setWeekData(data);
+
+                    // Falls Zeiten aus den Tasks ergänzt wurden, automatisch den Wochen-Key in Redis aktualisieren
+                    if (updated) {
+                        await client.set(key, data, 'EX', DATA_TTL_SECONDS);
+                    }
+
                 } catch (e) {
                     setStatus({ msg: "Ladefehler: " + e.message, type: "error" });
                 }
