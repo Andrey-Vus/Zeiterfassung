@@ -429,36 +429,29 @@
                     // --- START / ENDE AUS DEN TAGESAUFGABEN ÜBERNEHMEN ---
                     let updated = false;
                     for (let day of data.days) {
-                        // Nur abfragen/ergänzen, wenn Start oder Ende noch leer sind
-                        if (!day.start || !day.end) {
-                            try {
-                                const taskRes = await client.get(`zeiterfassung:tasks:${day.dateISO}`);
-                                if (taskRes) {
-                                    const parsedTasks = JSON.parse(taskRes);
-                                    const rows = parsedTasks.rows || [];
+                        try {
+                            const taskRes = await client.get(`zeiterfassung:tasks:${day.dateISO}`);
+                            if (taskRes) {
+                                const parsedTasks = JSON.parse(taskRes);
+                                const rows = parsedTasks.rows || [];
 
-                                    if (rows.length > 0) {
-                                        // 1. Erste Aufgabe: Startzeit nehmen (falls noch nicht vorhanden)
-                                        if (!day.start && rows[0].start) {
-                                            day.start = rows[0].start;
-                                            updated = true;
-                                        }
+                                if (rows.length > 0) {
+                                    // 1. Erste Aufgabe: Startzeit nehmen (falls noch nicht vorhanden)
+                                    if (!day.start && rows[0].start) {
+                                        day.start = rows[0].start;
+                                        updated = true;
+                                    }
 
-                                        // 2. Letzte Aufgabe: Letzte eingetragene Endzeit nehmen (falls vorhanden)
-                                        if (!day.end) {
-                                            for (let k = rows.length - 1; k >= 0; k--) {
-                                                if (rows[k].end) {
-                                                    day.end = rows[k].end;
-                                                    updated = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
+                                    // 2. Späteste Endzeit übernehmen, wenn hier nichts oder eine frühere Zeit steht
+                                    const maxEnd = rows.reduce((max, r) => (r.end && r.end > max ? r.end : max), "");
+                                    if (maxEnd && (!day.end || day.end < maxEnd)) {
+                                        day.end = maxEnd;
+                                        updated = true;
                                     }
                                 }
-                            } catch (err) {
-                                console.error("Fehler beim Laden der Aufgaben für " + day.dateISO, err);
                             }
+                        } catch (err) {
+                            console.error("Fehler beim Laden der Aufgaben für " + day.dateISO, err);
                         }
 
                         // Ist-Stunden & Überstunden für den Tag berechnen
@@ -677,6 +670,32 @@
                 setLoading(false);
             };
 
+            // Späteste Endzeit der Aufgaben in die Wochenerfassung übernehmen,
+            // sofern dort noch nichts oder eine frühere Endzeit steht.
+            const syncEndToWeek = async (client, rows) => {
+                const maxEnd = rows.reduce((max, r) => (r.end && r.end > max ? r.end : max), "");
+                if (!maxEnd) return;
+
+                const d = new Date(`${date}T00:00:00`);
+                const key = `zeiterfassung:week:${d.getFullYear()}:${getISOWeek(d)}`;
+                const res = await client.get(key);
+                if (!res) return;
+
+                const week = JSON.parse(res);
+                const day = (week.days || []).find(x => x.dateISO === date);
+                if (!day || (day.end && day.end >= maxEnd)) return;
+
+                day.end = maxEnd;
+                const plan = parseFloat(day.planHours) || 0;
+                const pause = parseInt(day.pauseMin) || 0;
+                if (day.start) {
+                    const netDuration = timeToDecimal(day.end) - timeToDecimal(day.start) - (pause / 60);
+                    day.actualHours = parseFloat(netDuration.toFixed(2));
+                    day.overtimeHours = parseFloat((day.actualHours - plan).toFixed(2));
+                }
+                await client.set(key, week, 'EX', DATA_TTL_SECONDS);
+            };
+
             const triggerAutosave = (newRows) => {
                 setStatus({ msg: "Speichere...", type: "info" });
                 if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -684,6 +703,7 @@
                     try {
                         const client = redisClient(dbAuth);
                         await client.set(`zeiterfassung:tasks:${date}`, { dateISO: date, rows: newRows }, 'EX', DATA_TTL_SECONDS);
+                        await syncEndToWeek(client, newRows);
                         setStatus({ msg: "Aufgaben gespeichert", type: "success" });
                     } catch (e) {
                         setStatus({ msg: "Fehler beim Speichern", type: "error" });
